@@ -1,6 +1,6 @@
 dependencies:
-- name: redhat-developer-hub
+- name: chart
   repository: oci://quay.io/rhdh
   version: 2.0-91-CI
-digest: sha256:160cc3630f6cc17a52ad100e61d5fb60de3de93c5884f2b23f39ee6109d0c301
-generated: "2026-09-24T15:33:48.931075+05:30"
+digest: sha256:ea775e071d20065d2deec55c67ec4de94e9a30827ca6a220b020dfd47cbd1a5b
+generated: "2026-09-24T16:06:20.702018+05:30"

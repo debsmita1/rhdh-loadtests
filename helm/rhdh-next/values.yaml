@@ -1,10 +1,25 @@
-global:
+# RHDH 2.x chart values (oci://quay.io/rhdh/chart)
+# Subchart is aliased as redhat-developer-hub in Chart.yaml
+redhat-developer-hub:
+  openshift:
+    # Override at install time, e.g.:
+    #   CLUSTER_ROUTER_BASE=$(oc get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}')
+    #   make install CLUSTER_ROUTER_BASE=$$CLUSTER_ROUTER_BASE
+    clusterRouterBase: apps.example.com
+    route:
+      enabled: true
+
   catalogIndex:
     image:
       registry: quay.io
       repository: rhdh/plugin-catalog-index
       tag: "2.1"
-  dynamic:
+
+  # Disable Lightspeed / Intelligent Assistant for load tests
+  intelligentAssistant:
+    enabled: false
+
+  dynamicPlugins:
     plugins:
       - package: ./dynamic-plugins/dist/backstage-community-plugin-rbac
         disabled: false
@@ -112,100 +127,62 @@ global:
         disabled: false
       - package: oci://quay.io/rhdh-community/rhdh-loadtest-plugins:bs_1.54_catalog-tab-25!internal-backstage-plugin-catalog-tab-25
         disabled: false
-redhat-developer-hub:
-  route:
-    enabled: false
 
-  upstream:
-    backstage:
-      appConfig:
-        app:
-          title: RHDH 2.1 loadtest
-          packages: all
-          extensions:
-            - page:home:
-                config:
-                  path: /
-            - page:catalog:
-                config:
-                  path: /catalog
-            - api:home/visits: true
-            - app-root-element:home/visit-listener: true
-            - home-page-layout:home/dynamic-homepage-layout:
-                config:
-                  customizable: true
+  appConfig:
+    app:
+      title: RHDH 2.1 loadtest
+      packages: all
+      extensions:
+        - page:home:
+            config:
+              path: /
+        - page:catalog:
+            config:
+              path: /catalog
+        - api:home/visits: true
+        - app-root-element:home/visit-listener: true
+        - home-page-layout:home/dynamic-homepage-layout:
+            config:
+              customizable: true
 
-        auth:
-          providers:
-            guest:
-              dangerouslyAllowOutsideDevelopment: true
+    auth:
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
 
-        catalog:
-          locations:
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/guest-login.yaml
-              rules:
-                - allow: [User, Group]
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/components-1000.yaml
-              rules:
-                - allow: [Component]
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/groups-100.yaml
-              rules:
-                - allow: [Group]
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/systems-100.yaml
-              rules:
-                - allow: [System]
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/apis-100.yaml
-              rules:
-                - allow: [API]
-            - type: url
-              target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/templates-100.yaml
-              rules:
-                - allow: [Template]
+    catalog:
+      locations:
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/guest-login.yaml
+          rules:
+            - allow: [User, Group]
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/components-1000.yaml
+          rules:
+            - allow: [Component]
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/groups-100.yaml
+          rules:
+            - allow: [Group]
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/systems-100.yaml
+          rules:
+            - allow: [System]
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/apis-100.yaml
+          rules:
+            - allow: [API]
+        - type: url
+          target: https://github.com/redhat-developer/rhdh-loadtest/blob/main/catalog/templates-100.yaml
+          rules:
+            - allow: [Template]
 
-        permission:
-          enabled: false
-          rbac:
-            pluginsWithPermission:
-              - catalog
-              - permission
-              - scaffolder
-            # policyFileReload: true
-            # policies-csv-file: ./rbac/rbac-policies.csv
-            # conditionalPoliciesFile: ./rbac-conditions/rbac-conditional-policies.yaml
-            admin:
-              users:
-                - name: user:default/rhdh-qe
+    permission:
+      enabled: false
 
-      extraEnvVars:
-        # defaults
-        - name: BACKEND_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: backend-secret
-              name: '{{ include "janus-idp.backend-secret-name" $ }}'
-        - name: POSTGRESQL_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: postgres-password
-              name: '{{- include "janus-idp.postgresql.secretName" . }}'
-        # load route host (app and backend baseUrl)
-        - name: APP_CONFIG_app_baseUrl
-          valueFrom:
-            configMapKeyRef:
-              name: rhdh-baseurl-configmap
-              key: APP_CONFIG_app_baseUrl
-        - name: APP_CONFIG_backend_baseUrl
-          valueFrom:
-            configMapKeyRef:
-              name: rhdh-baseurl-configmap
-              key: APP_CONFIG_backend_baseUrl
-        - name: BASEURL
-          valueFrom:
-            configMapKeyRef:
-              name: rhdh-baseurl-configmap
-              key: BASEURL
+  # NFS (New Frontend System / Module Federation)
+  extraEnv:
+    - name: BACKSTAGE_LOG_LEVEL
+      value: debug
+    - name: ENABLE_STANDARD_MODULE_FEDERATION
+      value: "true"
